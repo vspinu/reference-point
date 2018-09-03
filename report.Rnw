@@ -1,0 +1,147 @@
+\documentclass[a4paper, 12pt]{article}
+\input{/home/vspinu/works/preamble}
+% \usepackage[margin=2cm]{geometry}
+\usepackage{rotating}
+\usepackage{longtable}
+\usepackage{csvsimple}
+\begin{document}
+
+<<init, echo=F, warning=F, message=F>>=
+
+library(ggplot2)
+library(reshape2)
+library(plyr)
+library(knitr)
+library(data.table)
+library(xtable)
+options(xtable.sanitize.colnames.function = NULL,
+        xtable.sanitize.rownames.function = identity, 
+        maxmin.paper.save.tables = T)
+
+## Sys.setenv("MODEL-DIR" = "./md17_50000_I11_W11_LS1_KR1_pow_prelec1_random_narrow")
+modeldir <- Sys.getenv("MODEL-DIR")
+if(modeldir == "")
+  stop("MODEL-DIR env var is empty!")
+MODEL_NAME <- gsub("rd[as]", "", basename(modeldir))
+TEX_MODEL_NAME <- gsub("_", "\\_", MODEL_NAME,  fixed = T)
+modelfile <- sprintf("%s/model.rds", modeldir)
+
+if (!file.exists(modelfile)) {
+  stop("Model file '%s' doesn't exist", modelfile)
+}
+
+## opts_knit$set(root.dir = MODEL_NAME) # code is in parent
+opts_chunk$set(results = "asis",
+               echo = F,
+               warning = F, message = F,
+               fig.align = "center",
+               fig.height = 4.0,
+               dpi = 300, 
+               ## fig.ext="png",
+               ## dev = c("pdf", "png"), 
+               dev = "pdf", 
+               out.width = "\\linewidth",
+               cache = F)
+options(xtable.table.placement = "!htb")
+theme_set(theme_bw(9) + theme(strip.text.y = element_text(size = rel(.7))))
+source("./init.R")
+source("./utils_results.R")
+
+M <- readRDS(modelfile)
+LL <- M$getLL(T)
+
+MNAMES <- rp_names(M$DM)
+
+## GLOBALS (utilities use these values)
+## if you change this, replace all occurences in captions
+IND_IXS <- c(17, 50, 100)
+MAJ_THRESHOLD <- 50
+START <- min(30000, round(M$N/2))+1
+THIN <- 1
+
+if (grepl("prelec2|pow2|linlog2|ibeta", modeldir)) {
+  DO_EU <- FALSE
+  PAR_NAMES <- c("u", "w1", "w2", "l", "xi")
+  PAR_LATEX <- c("$\\alpha$", "$\\gamma^1$", "$\\gamma^2$", "$\\lambda$", "$\\xi$")
+  PAR_EXPR <- expression(alpha, gamma^1, gamma^2, lambda, xi)
+  PAR_RANGE <- expression(alpha[1] - alpha[139], gamma[1]^1 - gamma[139]^1, gamma[1]^2 - gamma[139]^2,
+                          lambda[1] - lambda[139], xi[1] - xi[139])
+} else {
+  DO_EU <- TRUE
+  PAR_NAMES <- c("u", "w", "l", "xi")
+  PAR_LATEX <- c("$\\alpha$", "$\\gamma$", "$\\lambda$", "$\\xi$")
+  PAR_EXPR <- expression(alpha, gamma, lambda, xi)
+  PAR_RANGE <- expression(alpha[1] - alpha[139], gamma[1] - gamma[139],
+                          lambda[1] - lambda[139], xi[1] - xi[139])
+}
+
+@
+
+
+\title{Model \\ \Sexpr{TEX_MODEL_NAME}} 
+\maketitle
+
+Total log likelihood: $\Sexpr{LL}$
+
+\subsection*{Behavioral Parameters}
+\label{sec:mixture-subjects-res}
+
+
+<<1111_prLUW, fig.height = 7.0, fig.cap="Posterior densities of behavioral parameters in population.">>=
+
+prLUW(M)
+
+@
+
+<<1111_stats_ind, fig.cap="Posterior densities of behavioral parameters for subject 17 ($B_{17}$)">>=
+
+stats_ind(M)
+
+@
+
+
+\clearpage
+\subsection*{Reference Points}
+\label{sec:reference-points}
+
+<<1111_RP_dens, fig.cap="Posterior densities for RP rules in population">>=
+
+RP_dens(M)
+    
+@
+
+
+<<1111_RP_ind, fig.cap="Posterior probability of a selection of subjects using a particular model">>=
+
+RP_ind(M)
+
+@
+
+<<1111_RP_maj_support>>=
+
+RP_maj_support(M)
+
+@
+
+<<1111_sharp_params>>=
+
+sharp_params(M)
+
+@ 
+
+<<1111_est_ref_prob, eval=F, fig.cap="Level plot of posterior classification probabilities. Intensity is proportional to probability.", fig.env="sidewaysfigure">>=
+
+est_ref_prob(M)
+
+@
+
+<<1111_Status_Quo_EU, eval=DO_EU>>=
+
+tbl <- get_rp_props_tbl(M, start = START)
+which_SQ <- which(tbl[, "Status Quo"] > MAJ_THRESHOLD)
+
+EU_tests(M, which_SQ, .05)
+
+@ 
+
+\end{document}
