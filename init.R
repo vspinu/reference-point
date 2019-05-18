@@ -2,13 +2,13 @@ suppressPackageStartupMessages({
     if (!exists("PBM")) {
         library(devtools)
         library(Rcpp)
-        load_all("~/dev/protoClasses/")
-        sourceCpp("~/dev/pbm/src/sample.cpp")
-        source("~/dev/pbm/R/hierarchy.R")
-        load("../data/data.rda")
+        devtools::load_all("protoClasses/")
+        sourceCpp("pbm/src/sample.cpp")
+        source("pbm/R/hierarchy.R")
+        load("data/data.rda")
     }
-    source("./utils.R")
-    sourceCpp("../decision-funcs.cpp")
+    source("utils.R")
+    sourceCpp("decision-funcs.cpp")
 })
 
 ## common values used throughout

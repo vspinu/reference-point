@@ -44,8 +44,8 @@ opts_chunk$set(results = "asis",
                cache = F)
 options(xtable.table.placement = "!htb")
 theme_set(theme_bw(9) + theme(strip.text.y = element_text(size = rel(.7))))
-source("./init.R")
-source("./utils_results.R")
+source("init.R")
+source("utils_results.R")
 
 M <- readRDS(modelfile)
 LL <- M$getLL(T)
