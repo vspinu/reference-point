@@ -1,6 +1,6 @@
 [submodule "pbm"]
 	path = pbm
-	url = https://github.com/vspinu/pbm.git
+	url = git@github.com:vspinu/pbm.git
 [submodule "protoClasses"]
 	path = protoClasses
-	url = https://github.com/vspinu/protoClasses.git
+	url = git@github.com:vspinu/protoClasses.git

@@ -49,8 +49,6 @@ if (file.exists(modelfile)) {
   dir.create(model, FALSE, TRUE)
   cat("Saving", modelfile, "...\n")
   saveRDS(M, file = modelfile)
-  result_file <- sprintf("results/%s.rds", model)
-  saveRDS(M, file = result_file)
 }
 
 cat("\n\n---------- CREATING REPORT FOR MODEL ", model, "-----------\n\n")
