@@ -580,3 +580,21 @@ stopif <- function (...) {
     }
   invisible()
 }
+
+setup_for_fold <- function(cv_type = 10){
+    if (cv_type == 10){
+        SEED <<- 17
+        FOLDS <<- split(1:70, sample(rep(1:10, times = 7)))
+    } else if (cv_type == 70) {
+        SEED <<- 70
+        FOLDS <<- split(1:70, 1:70)
+    } else {
+        stop ("invalid cv_type:", cv_type)
+    }
+    set.seed(SEED)
+    CVDIR <<- sprintf("./data/CV%s/", cv_type)
+    dir.create(CVDIR, F)
+    folds_file <- sprintf("%sfolds%d.rds", CVDIR, SEED)
+    if (!file.exists(folds_file))
+        saveRDS(FOLDS, folds_file)
+}

@@ -168,6 +168,7 @@ model_rule_mixture <- function(nr_sims = 5000, model_data,
   ## on estimated.
   ## M$DM$st <- t(replicate(nrDM, c(runif(ndpar, .1, 8), runif(1, 5, 50))))
 
+  cat("\n")
   cat(sprintf("-- ADAPTIVE WARM UP (WITH SCALING) %d ITERATIONS ...\n", nr_sims_warm))
   update(M, nr_sims_warm)
 

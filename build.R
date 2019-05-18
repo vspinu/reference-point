@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 
 ## In order to replicate models in the appendix run this script as:
-## sec 2 model 1               : ./build.R 17 50000 T T T T pow prelec1 (same as ./build)
+## sec 2 model 1               : ./build.R 17 50000 T T T T pow prelec1 (same as ./build.R)
 ## sec 3 model 1 with exp util : ./build.R 17 50000 T T T T exp_log prelec1
 ## sec 4 model 1 with prelec2  : ./build.R 17 50000 T T T T pow prelec2
 ## sec 5 model 1 with ibeta    : ./build.R 17 50000 T T T T pow ibeta
