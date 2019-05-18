@@ -2,7 +2,7 @@
 
 ### Code for the paper Baillon et. al. _Searching for the Reference Point_ Management Science 2018
 
-Data is availabe in [`./data`](./data/README.md) sub-folder.
+Data is availabe in [`./data`](./data/) sub-folder.
 
 In order to replicate the results do:
 
@@ -25,16 +25,12 @@ install.packages(c("Rcpp", "devtools", "coda", "abind",
 
 ```sh
 ./build.R 
-```
 
-Pass additional parameters to customize for alternative models
+## Pass additional parameters to customize for alternative models
+# ./build.R SEED I_nonLSKR I_LSKR W_nonLSKR W_LSKR util_type weight_type
 
-```sh
-./build.R SEED I_nonLSKR I_LSKR W_nonLSKR W_LSKR util_type weight_type
-```
-For example
+## For example
 
-```sh
 # sec 2 model 1               : ./build.R 17 50000 T T T T pow prelec1 (same as ./build.R)
 # sec 3 model 1 with exp util : ./build.R 17 50000 T T T T exp_log prelec1
 # sec 4 model 1 with prelec2  : ./build.R 17 50000 T T T T pow prelec2
@@ -44,11 +40,11 @@ For example
 # sec 8 model 4               : ./build.R 17 50000 F T T F pow prelec1
 ```
 
-!!!NOTE:!!!
+!!!NOTE!!!
 
-  The simulation is using the PBM package which was written prior to the advent
-  of STAN and is not under the active development. It's highly advisable to use
-  STAN for similar task. Decision functions written in C++ (available in
-  `decision-function.cpp`) might be useful.
+    The simulation uses the PBM package which was written prior to the advent of
+    STAN and is no longer developed. It's highly advisable to use STAN for
+    similar tasks in the future. Decision functions written in C++ (available in
+    `decision-function.cpp`) might be useful.
 
 
