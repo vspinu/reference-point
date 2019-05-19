@@ -39,6 +39,7 @@ model_rule_mixture <- function(nr_sims = 5000, model_data,
   ## defBC and defP calls use standard R dynamic scope
   Nr <- get("Nr", envir = model_data)
   nrRP <- get("nrRP", envir = model_data)
+  nrDM <- get("nrDM", envir = model_data)
   ixQ <- get("ixQ", envir = model_data)
   ixRP <- get("ixRP", envir = model_data)
   ixDM <- get("ixDM", envir = model_data)

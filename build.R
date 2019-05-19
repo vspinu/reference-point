@@ -13,8 +13,16 @@
 ## parallel ./build.R 17 50000 T T T T pow ibeta,prelec2
 ## parallel ./build.R 17 50000 T,F T T T,F pow prelec1
 
+### 1) LOAD DATA
 source("utils.R")
-assignCommandArgs(seed = 17, N = 50000,
+## data <- readRDS("data/data.rds") ## old binary
+data_file <- Sys.getenv("RP-DATA-CSV")
+if(data_file == "")
+  data_file <- "./data/dataset.csv"
+data <- build_data(data_file)
+
+### 2) CONFIG
+assignCommandArgs(seed = 17, N = 10000,
                   I_nonLSKR = T, I_LSKR = T, W_nonLSKR = T, W_LSKR = T,
                   util_type = "pow", weight_type = "prelec1")
 
@@ -29,22 +37,21 @@ model <- encode_model(seed, N,
 model <- paste0(model, Sys.getenv("SUFFIX"))
 
 cat("\n------------- MODEL ", model, "-----------\n\n")
-
 source("init.R")
 source("model-RP-rule-estim.R")
-
 modelfile <- sprintf("%s/model.rds", model)
 
 if (file.exists(modelfile)) {
   cat("Model file exists; skipping simulation.")
 } else {
 
-  tdata <- buildData.rule_mixture_DM(data,
-                                     I_nonLSKR = I_nonLSKR, I_LSKR = I_LSKR,
-                                     W_nonLSKR = W_nonLSKR, W_LSKR = W_LSKR,
-                                     LS = LS, KR = KR)
+  model_data <-
+    buildData.rule_mixture_DM(data,
+                              I_nonLSKR = I_nonLSKR, I_LSKR = I_LSKR,
+                              W_nonLSKR = W_nonLSKR, W_LSKR = W_LSKR,
+                              LS = LS, KR = KR)
 
-  M <- model_rule_mixture(N, tdata, util_type, weight_type)
+  M <- model_rule_mixture(N, model_data, util_type, weight_type)
 
   dir.create(model, FALSE, TRUE)
   cat("Saving", modelfile, "...\n")

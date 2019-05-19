@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
   library(purrr)
   library(magrittr)
   library(data.table)
-  library(dtplyr)
+  library(plyr)
   library(dplyr)
 })
 
@@ -75,12 +75,118 @@ buildData.simple <- function(envir = globalenv()){
     envir
 }
 
+build_data <- function(file) {
+    library(data.table)
+    dD <- data.table::fread(file)
+    data.table::setnames(dD, c("IdQuestion", "IdSubject", "Preference"), c("Qid", "Sid", "prefs"))
+    if (!all.equal(c(1, 2), sort(unique(dD$prefs))))
+        stop("Preference column must contain only 1 (left) and 2 (right) choices")
+    dD[, `:=`(Sid = as.factor(Sid),
+              Qid = as.factor(Qid))]
+    xpNames <- grep("^(x|p).*[ab]$", names(dD), value=T)
+    xNames <- grep("^x[0-9].*[ab]$", names(dD), value=T)
+    xaNames <- grep("^x[0-9]a$", names(dD), value=T)
+    paNames <- grep("^p[0-9]a$", names(dD), value=T)
+    xbNames <- grep("^x[0-9]b$", names(dD), value=T)
+    pbNames <- grep("^p[0-9]b$", names(dD), value=T)
+
+    ## QUESTIONS:
+    dQ <- unique(dD[, c("Qid", xaNames, paNames, xbNames, pbNames), with = F])
+    maxX <- max(abs(dQ[, xNames, with = F]), na.rm=T)
+    dQ[, xNames] <- dQ[, xNames, with = F]/maxX
+
+    qset <- dQ[, {
+        ## 0) unique question per Qid
+        if (nrow(.SD) > 1) {
+            stop(sprintf("Multiple specifications of question %s detected", Qid[[1]]))
+        }
+
+        xa <- as.numeric(.SD[, xaNames, with = F])
+        xb <- as.numeric(.SD[, xbNames, with = F])
+        pa <- as.numeric(.SD[, paNames, with = F])
+        pb <- as.numeric(.SD[, pbNames, with = F])
+
+        ## 1) NAs in Xs are critical, don't put 0s!
+        if (!all.equal(is.na(xa), is.na(pa))) {
+            stop(sprintf("Pattern of missing values differs for Xa and Pa (question id: %s)", .SD$Qid))
+        }
+        if (!all.equal(is.na(xb), is.na(pb))) {
+            stop(sprintf("Pattern of missing values differs for Xb and Pb (question id: %s)", .SD$Qid))
+        }
+
+        xa <- c(na.omit(xa))
+        xb <- c(na.omit(xb))
+
+        ## 2) Xs are increasing
+        if (!all.equal(xa, sort(xa)))
+            stop(sprintf("Xa not increasing for question id %s", .SD$id))
+        if (!all.equal(xb, sort(xb)))
+            stop(sprintf("Xb not increasing for question id %s", .SD$id))
+
+        x <- c(xa, xb)
+        pa <- c(na.omit(pa))
+        pb <- c(na.omit(pb))
+        pa <- pa/sum(pa)
+        pb <- pb/sum(pb)
+        p <- c(pa, pb)
+        
+        list(lenB = length(xa),
+             lenA = length(xb),
+             minAx = min(xa),
+             minBx = min(xb),
+             minABx = min(x),
+             maxAx = max(xa),
+             maxBx = max(xb),
+             maxABx = max(x),
+             maxAp = max(pa),
+             maxBp = max(pb),
+             x_at_max_p = x[which.max(p)],
+             x_at_max_p_A = xa[which.max(pa)],
+             x_at_max_p_B = xb[which.max(pb)], 
+             meanA = meanA <- sum(xa*pa),
+             meanB = meanB <- sum(xb*pb),
+             meanDiff = meanA - meanB,
+             zero = 0,
+             maxMin = max(min(xa), min(xb)),
+             minMax = min(max(xa), max(xb)),
+             minMean = min(meanA, meanB),
+             maxMean = max(meanA, meanB),
+             meanMean = mean(meanA, meanB),
+             aveExpectation = mean(meanA, meanB))
+    }, by = Qid]
+
+    dQ <- dQ[qset, on = "Qid"]; rm(qset)
+    dD <- dD[, c("Sid", "Qid", "prefs")][dQ, on = "Qid"]
+    ## measurement error
+    dD[prefs == 0, prefs := 1]
+
+    ## using data.frames is easier in estimation
+    dD <- as.data.frame(dD)
+    dQ <- as.data.frame(dQ)
+
+    ## raw vectors and matrices used in simulation
+    pa <- as.matrix(dD[paNames])
+    pb <- as.matrix(dD[pbNames])
+    xa <- as.matrix(dD[xaNames])
+    xb <- as.matrix(dD[xbNames])
+    PREFS <- as.integer(dD$prefs - 1)
+
+    ixDM <- as.integer(dD$Sid)
+    ixQ <- as.integer(dD$Qid)
+
+    nrDM <- length(levels(dD$Sid))
+    nrQ <- length(unique(ixQ))
+    Nr <- length(ixDM)
+    
+    environment()
+}
+
 
 ### PREFS
 gen_prefs <- function(u = .8, l = 2.4, r = 1, beta = 10, data = buildData.SPT(data, "minMax")){
     ## Assign probs and PREFS into DATA and return DATA.
     ## DATA must contain xa, xb, rpX and rpP (usually from a call to buildData.XXX)
-    Nr <- nrow(get("xb", data))
+    Nr <- get("Nr", data)
     U <- rep.int(u, Nr)
     L <- rep.int(l, Nr)
     R <- rep.int(r, Nr)
@@ -128,7 +234,7 @@ kr_vals <- function(data, u = .8, l = 2.4, table = T){
         bb = c_SPT_pow(data$xa, data$pa, data$xa, data$pa, U, L),
         ba = c_SPT_pow(data$xb, data$pb, data$xa, data$pa, U, L),
         ab = c_SPT_pow(data$xa, data$pa, data$xb, data$pb, U, L))
-    if(table) table(apply(vals, 1, which.max))/nrDM
+    if(table) table(apply(vals, 1, which.max))/data$nrDM
     else vals
 }
 
@@ -193,6 +299,7 @@ Q_and_density <- function(gr_df, formula= ~ sims|Qid, main=gr_df$gr[1], groups=r
 
 init_state_Mu <- function(M, expr = expression()){
     S_par <- M$LUR$rv_dimnames[[1]]
+    nrDM <- M$root$evalq(nrDM)
     if("beta"%in%S_par){
         M$prLUR$st["beta", ] <- c(runif(1, .8, 1.5), runif(1, 0, 5))
         M$LUR$st[,"beta" ] <- runif(nrDM, 10, 40)
@@ -213,6 +320,7 @@ init_state_Mu <- function(M, expr = expression()){
 
 init_state_M2 <- function(M, expr = expression()){
     S_par <- M$Lb$rv_dimnames[[1]]
+    nrDM <- M$root$evalq(nrDM)
     if("beta"%in%S_par){
         M$prLb$st["beta", ] <- c(runif(1, .8, 1.5), runif(1, 0, 5))
         M$Lb$st[,"beta" ] <- runif(nrDM, 10, 40)

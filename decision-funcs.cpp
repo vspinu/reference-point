@@ -85,6 +85,7 @@ double pt(vector<double>& xx, vector<double>& pp, double& rp,
   // map over Xs and compute PT(rpx)
   // note: probabilities must be normalized to 1
   // note: NAs in Xs are critical! don't put 0s
+  // note: Xs are assumed sorted
 
   int nR = r.length();
 
@@ -135,7 +136,7 @@ NumericVector SPT(NumericMatrix& X, NumericMatrix& P,
     U - vector of power parameters of utility functions
     R - matrix of weighting function parameters
 
-    Notes: p vector need not be normalized. NA s in X and rpX are skeeped and
+    Notes: p vector need not be normalized. NAs in X and rpX are skipped and
     coresponding Ps ignored
   */
   

@@ -1,5 +1,6 @@
 
 ### DEFAULT GLOBALS
+## !! All these globals are reset in report.Rnw
 
 IND_IXS <- c(17, 50, 100)
 MAJ_THRESHOLD<-50
@@ -12,15 +13,36 @@ PAR_EXPR <- expression(alpha, gamma, lambda, xi)
 PAR_RANGE <- expression(alpha[1] - alpha[139], gamma[1] - gamma[139],
                         lambda[1] - lambda[139], xi[1] - xi[139])
 
+mc_mean_population <- function(M) {
+  mpop <- window(meanLNorm(M$prDM)[, PAR_NAMES], start = START, thin = THIN)
+  colnames(mpop) <- paste0("mu[", PAR_EXPR, "]")
+  mpop
+}
+
+mc_sd_population <- function(M) {
+  spop <- window(sigmaLNorm(M$prDM)[, PAR_NAMES], start = START, thin = THIN)
+  colnames(spop) <- paste0("sigma[", PAR_EXPR, "]")
+  spop
+}
+
+mc_ind <- function(M) {
+  window(M$DM$mc_st, start = START, thin = THIN)  
+}
+
+mc_RP_pop <- function(M) {
+  mn <- window(M$prRP$mc_st, start = START)
+  colnames(mn) <- MNAMES
+  mn
+}
+
+mc_RP_ind <- function(M) {
+  window(M$RP$mc_st, start = START)
+}
 
 prLUW <- function(M, prefix = "tmp"){
   ## Posterior densities of behavioral parameters in population
-  mpop <- window(meanLNorm(M$prDM)[, PAR_NAMES], start = START, thin = THIN)
-  spop <- window(sigmaLNorm(M$prDM)[, PAR_NAMES], start = START, thin = THIN)
-
-  colnames(mpop) <- paste0("mu[", PAR_EXPR, "]")
-  colnames(spop) <- paste0("sigma[", PAR_EXPR, "]")
-
+  mpop <- mc_mean_population(M)
+  spop <- mc_sd_population(M)
   densplot1(cbind(mpop, spop))
   ## pop_stack <- stack(as.data.frame(pop))
   ## ggplot(pop_stack) + geom_density(aes(x = values)) +
@@ -36,29 +58,24 @@ prLUW <- function(M, prefix = "tmp"){
           scf = identity)
 }
 
-
 stats_ind <- function(M, prefix = "tmp", subject = 17){
   ## Posterior densities of behavioral parameters for subject 17 ($B_{17}$)
   ## mn <- window(M$prLUR, start = 10000, thin = 1)
-  mn <- window(M$DM$mc_st[, 139*(0:(length(PAR_NAMES) - 1L)) + subject],
-               start = START, thin = THIN)
+  mn <- mc_ind(M)
   mn <- mn[, paste0(PAR_NAMES, subject)]
   colnames(mn) <- PAR_EXPR
   densplot1(mn)
-
   colnames(mn) <- PAR_LATEX
   pxtable(median_summary(mn),
           caption = "Posterior summaries for subject 17.", 
           label = paste0(prefix, "_summaries_ind"))
 }
 
-
 ind_spec_all <- function(M, prefix = "tmp"){
   ## Histograms of point estimates of behavioral parameters of all 139 subjects.
   ## beh <- colMeans(M$DM[["mc_st"]])[, PAR_NAMES]
   DM <- M$DM[["mc_st"]]
-  beh <- apply(DM[START:length(DM), , ], c(2, 3), median)[, PAR_NAMES]
-
+  beh <- apply(DM[START:dim(DM)[[1]], , ], c(2, 3), median)[, PAR_NAMES]
   colnames(beh) <- PAR_RANGE
 
   beh_stack <- stack(as.data.frame(beh))
@@ -73,15 +90,13 @@ ind_spec_all <- function(M, prefix = "tmp"){
 
   colnames(beh) <- PAR_LATEX
   pxtable(summary(as.mcmc(beh))$quantiles,
-          caption = "Quantiles of point estimates of behavioral parameters of all 139 subjects.",
+          caption = "Quantiles of point estimates of behavioral parameters of all subjects.",
           label = paste0(prefix, "_ind_spec_all"))
 }
 
-
 RP_dens <- function(M, prefix = "tmp") {
   ## Posterior densities for RP rules in population
-  mn <- window(M$prRP$mc_st, start = START)
-  colnames(mn) <- MNAMES
+  mn <- mc_RP_pop(M)
   out <- stack(as.data.frame(mn))
   out$ind <- ordered(out$ind, levels = MNAMES)
 
@@ -108,7 +123,7 @@ RP_dens <- function(M, prefix = "tmp") {
 RP_ind <- function(M, prefix = "tmp"){
   ## Posterior probability of a selection of subjects using a particular model
   
-  mn <- window(M$RP$mc_st[, IND_IXS], start = START)
+  mn <- mc_RP_ind(M)[, IND_IXS]
 
   models <- data.table(stack(as.data.frame(mn)))
   osubjects <- unique(models$ind)

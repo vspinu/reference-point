@@ -9,8 +9,6 @@
 <<init, echo=F, warning=F, message=F>>=
 
 library(ggplot2)
-library(reshape2)
-library(plyr)
 library(knitr)
 library(data.table)
 library(xtable)
@@ -18,7 +16,7 @@ options(xtable.sanitize.colnames.function = NULL,
         xtable.sanitize.rownames.function = identity, 
         maxmin.paper.save.tables = T)
 
-## Sys.setenv("MODEL-DIR" = "./md17_50000_I11_W11_LS1_KR1_pow_prelec1_random_narrow")
+## Sys.setenv("MODEL-DIR" = "./md17_10000_I11_W11_LS1_KR1_pow_prelec1_ref")
 modeldir <- Sys.getenv("MODEL-DIR")
 if(modeldir == "")
   stop("MODEL-DIR env var is empty!")
@@ -51,10 +49,11 @@ M <- readRDS(modelfile)
 LL <- M$getLL(T)
 
 MNAMES <- rp_names(M$DM)
+nrDM <- M$root$evalq(nrDM)
 
-## GLOBALS (utilities use these values)
-## if you change this, replace all occurences in captions
-IND_IXS <- c(17, 50, 100)
+## GLOBALS (utilities in results_utils.R use these values)
+set.seed(100)
+IND_IXS <- if (nrDM > 100) c(17, 50, 100) else sample(1:nrDM, 3)
 MAJ_THRESHOLD <- 50
 START <- min(30000, round(M$N/2))+1
 THIN <- 1
@@ -64,16 +63,26 @@ if (grepl("prelec2|pow2|linlog2|ibeta", modeldir)) {
   PAR_NAMES <- c("u", "w1", "w2", "l", "xi")
   PAR_LATEX <- c("$\\alpha$", "$\\gamma^1$", "$\\gamma^2$", "$\\lambda$", "$\\xi$")
   PAR_EXPR <- expression(alpha, gamma^1, gamma^2, lambda, xi)
-  PAR_RANGE <- expression(alpha[1] - alpha[139], gamma[1]^1 - gamma[139]^1, gamma[1]^2 - gamma[139]^2,
-                          lambda[1] - lambda[139], xi[1] - xi[139])
+  PAR_RANGE <- eval(bquote(expression(alpha[1] - alpha[.(nrDM)],
+                                      gamma[1]^1 - gamma[.(nrDM)]^1,
+                                      gamma[1]^2 - gamma[.(nrDM)]^2,
+                                      lambda[1] - lambda[.(nrDM)],
+                                      xi[1] - xi[.(nrDM)])))
 } else {
   DO_EU <- TRUE
   PAR_NAMES <- c("u", "w", "l", "xi")
   PAR_LATEX <- c("$\\alpha$", "$\\gamma$", "$\\lambda$", "$\\xi$")
   PAR_EXPR <- expression(alpha, gamma, lambda, xi)
-  PAR_RANGE <- expression(alpha[1] - alpha[139], gamma[1] - gamma[139],
-                          lambda[1] - lambda[139], xi[1] - xi[139])
+  PAR_RANGE <- eval(bquote(expression(alpha[1] - alpha[.(nrDM)], gamma[1] - gamma[.(nrDM)],
+                                      lambda[1] - lambda[.(nrDM)], xi[1] - xi[.(nrDM)])))
 }
+
+saveRDS(list(mean_pop = mc_mean_population(M),
+             sd_pop = mc_sd_population(M),
+             ind = mc_ind(M),
+             RP_pop = mc_RP_pop(M),
+             RP_ind = mc_RP_ind(M)),
+        sprintf("%s/mcmc.rds", modeldir))
 
 @
 
