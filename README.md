@@ -25,9 +25,12 @@ install.packages(c("Rcpp", "devtools", "coda", "abind",
 ```sh
 ./build.R 
 
-## Pass additional parameters to customize for alternative models
+## Pass additional parameters for alternative models
+#
 #    ./build.R SEED I_nonLSKR I_LSKR W_nonLSKR W_LSKR util_type weight_type
+#
 # where
+#
 #             SEED: random seed
 # I_nonLSKR/I_LSKR: TRUE of FALSE for I term (consumption utility) for non-LS&KR
 #                   or LS&KR models respectively
@@ -48,13 +51,15 @@ install.packages(c("Rcpp", "devtools", "coda", "abind",
 # sec 8 model 4               : ./build.R 17 50000 F T T F pow prelec1
 ```
 
+You must have `pdflatex` on your machine to be able to produce the pdf report.
+
 ### Use on your own data
 
 If you can put your data in the required format set the environment variable
 `RP-DATA-CSV` to your data file and run `./build.R` as above. 
 
 ```sh
-export RP-DATA-CSV=/path/to/your-data.csv
+export RP-DATA-CSV="/path/to/your-data.csv"
 ./build.R
 ```
 
@@ -72,8 +77,8 @@ Data requirements are:
 - Outcomes of each prospects must be in increasing order. That is, x1a < x2a <
   ..., x1b < x2b < ....
 
-Besides the pdf report an RDS archive containing MCMC simulations will be stored
-in `mcmc.rds` file.
+Besides the pdf report, an RDS archive containing MCMC simulations will be
+stored in `mcmc.rds` file. You can use it for your own inferences.
 
 ```
 > mc <- readRDS("mcmc.rds")
