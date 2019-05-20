@@ -157,8 +157,6 @@ build_data <- function(file) {
 
     dQ <- dQ[qset, on = "Qid"]; rm(qset)
     dD <- dD[, c("Sid", "Qid", "prefs")][dQ, on = "Qid"]
-    ## measurement error
-    dD[prefs == 0, prefs := 1]
 
     ## using data.frames is easier in estimation
     dD <- as.data.frame(dD)

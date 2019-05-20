@@ -119,7 +119,6 @@ RP_dens <- function(M, prefix = "tmp") {
           srf = NULL)
 }
 
-
 RP_ind <- function(M, prefix = "tmp"){
   ## Posterior probability of a selection of subjects using a particular model
   
